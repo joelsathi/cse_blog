@@ -1,0 +1,114 @@
+===============================================================================================
+                                TEMPLATES IN HTML USING JINJA
+=============================================================================================== 
+
+To use the templates in flask, we can use the base.html
+The jinja syntax is useful in python to format in the templates
+
+Add this to the top of the html file you want to use
+{% extends 'base.html' %}
+
+For loop
+{% for post in posts %}
+{% endfor %}
+
+Print 
+{{ put the element here }}
+
+If Else statement
+{% if post.author %}
+{% else %}
+{% endif %}
+
+===============================================================================================
+                                        TO SET UP ROUTES
+=============================================================================================== 
+# This is how you pass the url for dynamic url
+@app.route('/home/users/<string:name>/posts/<int:id>')
+def hello(name, id):
+    return f"Hello {name} your post id is {id}"
+
+# This how you can restrict the methods
+@app.route('/onlyget', methods=['POST', 'GET'])
+def get_req():
+    return "This is only POST"
+
+# Set it up in the debug mode as a good practice, so that you can run in debug mode
+if __name__ == "__main__":
+    app.run(debug=True)
+
+===============================================================================================
+                                        TO SET UP DATABASE
+=============================================================================================== 
+
+# install SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
+
+# configure the app
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
+db = SQLAlchemy(app)
+
+# Create a model for the database 
+# i.e the table 
+class BlogPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    author = db.Column(db.String(30), nullable=False, default='N/A')
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"Blog post {self.id}"
+
+######### In the terminal open the python terminal by typing `python`
+from app import db, app, BlogPost
+
+# create the database
+with app.app_context():
+    db.create_all()
+
+# insert row to the database
+with app.app_context():
+    post = BlogPost(title='Blog Post 1', content='Hi this is Joel', author='Joel')
+    db.session.add(post)
+    db.session.commit()
+
+# query the database
+with app.app_context(): BlogPost.query.all()
+
+# Get the specific data
+with app.app_context(): BlogPost.query.all()[0].author
+
+# Get the first element
+with app.app_context(): BlogPost.query.first()
+
+# Filtering
+with app.app_context(): BlogPost.query.filter_by(author='Joel').all()
+
+# Order by
+all_posts = BlogPost.query.order_by(BlogPost.date_posted).all()
+
+# Get by id
+BlogPost.query.get(2)
+
+# Delete the post
+with app.app_context():
+    db.session.delete(BlogPost.query.get(3))
+    db.session.commit()
+
+# Edit the post
+@app.route("/posts/edit/<int:id>", methods=['GET', 'POST'])
+def edit(id):
+    post = BlogPost.query.get_or_404(id)
+    if request.method == 'POST':
+        print("Posting to the database")
+        post.title = request.form['title']
+        post.author = request.form['author']
+        post.content = request.form['content']
+        db.session.commit()
+        return redirect('/posts')
+    else:
+        return render_template('edit.html', post=post)
+
+# The input form for HTML
+    <!-- <input type="text" name="title" id="title" /> -->
