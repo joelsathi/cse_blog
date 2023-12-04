@@ -12,6 +12,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
+USER 10014
+
 COPY . /code/
 
 CMD ["python", "app.py"]
